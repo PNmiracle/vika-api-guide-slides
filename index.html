@@ -741,7 +741,7 @@ class SlidePresentation {
 
     setupStageScale() {
         const scale = () => {
-            const factor = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+            const factor = Math.min(window.innerWidth / 1920, window.innerHeight / 1080) * 1.3;
             const x = (window.innerWidth - 1920 * factor) / 2;
             const y = (window.innerHeight - 1080 * factor) / 2;
             this.stage.style.transform = `translate(${x}px, ${y}px) scale(${factor})`;
