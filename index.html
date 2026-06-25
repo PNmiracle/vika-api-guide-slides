@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>维格表 API 权限开通指南</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;600;700;900&display=swap" rel="stylesheet">
+
+<style>
+/* ===========================================
+   THEME — Warm Editorial
+   =========================================== */
+:root {
+    --bg-page: #faf7f2;
+    --bg-card: #ffffff;
+    --text-primary: #1a1a1a;
+    --text-secondary: #5c5c5c;
+    --text-muted: #999999;
+    --accent-amber: #d4923a;
+    --accent-teal: #3a8f85;
+    --accent-rose: #c75b6e;
+    --accent-sage: #7a9a7e;
+    --border-light: #e8e3da;
+    --shadow-card: 0 2px 20px rgba(0,0,0,0.04);
+    --shadow-hover: 0 8px 40px rgba(0,0,0,0.08);
+
+    --font-display: 'Noto Serif SC', serif;
+    --font-body: 'Noto Sans SC', sans-serif;
+
+    --slide-padding: 100px;
+    --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+    --duration-normal: 0.5s;
+}
+
+/* ===========================================
+   FIXED 16:9 STAGE — MANDATORY
+   =========================================== */
+html, body {
+    width: 100%; height: 100%;
+    margin: 0; overflow: hidden;
+    background: var(--bg-page);
+}
+.deck-viewport {
+    position: fixed; inset: 0;
+    overflow: hidden;
+    background: var(--bg-page);
+}
+.deck-stage {
+    position: absolute; left: 0; top: 0;
+    width: 1920px; height: 1080px;
+    overflow: hidden;
+    transform-origin: 0 0;
+    background: var(--bg-page);
+}
+.slide {
+    position: absolute; inset: 0;
+    width: 1920px; height: 1080px;
+    overflow: hidden; display: block;
+    visibility: hidden; opacity: 0;
+    pointer-events: none;
+    background: var(--bg-page);
+}
+.slide.active, .slide.visible {
+    visibility: visible; opacity: 1;
+    pointer-events: auto; z-index: 1;
+}
+img, video, canvas, svg { max-width: 100%; max-height: 100%; }
+.deck-controls { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 1000; }
+@media print {
+    html, body { width: 1920px; height: auto; overflow: visible; background: #fff; }
+    .deck-viewport { position: static; overflow: visible; background: #fff; }
+    .deck-stage { position: static; width: auto; height: auto; transform: none !important; background: none; }
+    .slide { position: relative; display: block !important; visibility: visible !important; opacity: 1 !important; pointer-events: auto !important; width: 1920px; height: 1080px; break-after: page; page-break-after: always; }
+    .slide:last-child { break-after: auto; page-break-after: auto; }
+    .deck-controls { display: none !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.2s !important; }
+}
+
+/* ===========================================
+   GLOBAL
+   =========================================== */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+.slide-content {
+    position: relative; z-index: 2;
+    width: 100%; height: 100%;
+    padding: var(--slide-padding);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center;
+}
+
+/* Subtle paper texture */
+.slide::before {
+    content: '';
+    position: absolute; inset: 0;
+    background:
+        radial-gradient(ellipse at 30% 20%, rgba(212,146,58,0.04) 0%, transparent 50%),
+        radial-gradient(ellipse at 70% 80%, rgba(58,143,133,0.03) 0%, transparent 50%);
+    pointer-events: none;
+}
+
+/* ===========================================
+   TITLE SLIDE
+   =========================================== */
+.title-slide .emoji-hero {
+    font-size: 80px;
+    animation: gentleFloat 4s ease-in-out infinite;
+}
+@keyframes gentleFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+}
+.title-slide h1 {
+    font-family: var(--font-display);
+    font-size: 68px; font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.4;
+    max-width: 900px;
+    margin-top: 16px;
+}
+.title-slide h1 .hl {
+    color: var(--accent-amber);
+}
+.title-slide .subtitle {
+    font-family: var(--font-body);
+    font-size: 24px; font-weight: 300;
+    color: var(--text-secondary);
+    margin-top: 20px;
+    line-height: 1.7;
+}
+.title-slide .meta-row {
+    display: flex; gap: 36px;
+    margin-top: 48px;
+}
+.title-slide .meta-item {
+    display: flex; flex-direction: column;
+    align-items: center; gap: 8px;
+}
+.title-slide .meta-item .icon {
+    font-size: 32px;
+}
+.title-slide .meta-item .label {
+    font-family: var(--font-body);
+    font-size: 16px; color: var(--text-muted);
+}
+
+/* Decorative line */
+.ornament {
+    width: 60px; height: 3px;
+    background: var(--accent-amber);
+    border-radius: 2px;
+}
+
+/* ===========================================
+   SECTION DIVIDER SLIDE
+   =========================================== */
+.section-slide h2 {
+    font-family: var(--font-display);
+    font-size: 52px; font-weight: 700;
+    color: var(--text-primary);
+}
+.section-slide .number-watermark {
+    font-family: var(--font-display);
+    font-size: 200px; font-weight: 900;
+    color: var(--accent-amber);
+    opacity: 0.04;
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none; z-index: 0;
+}
+
+/* ===========================================
+   GRID CARDS (3-up)
+   =========================================== */
+.card-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 32px; width: 100%; max-width: 1400px;
+}
+.card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-light);
+    border-radius: 20px;
+    padding: 44px 36px;
+    text-align: center;
+    transition: all 0.3s ease;
+    box-shadow: var(--shadow-card);
+}
+.card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-hover);
+}
+.card.featured {
+    border-color: var(--accent-amber);
+    box-shadow: 0 4px 30px rgba(212,146,58,0.1);
+}
+.card .card-icon {
+    font-size: 48px; margin-bottom: 16px;
+}
+.card h3 {
+    font-family: var(--font-display);
+    font-size: 28px; font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 12px;
+}
+.card .tag {
+    display: inline-block;
+    padding: 4px 14px; border-radius: 20px;
+    font-family: var(--font-body);
+    font-size: 14px; font-weight: 600;
+    margin-bottom: 14px;
+}
+.tag-fast { background: #fef3e4; color: #b8752e; }
+.tag-safe { background: #e7f4f2; color: #2d7066; }
+.tag-warn { background: #fde8ec; color: #a84255; }
+.card p {
+    font-family: var(--font-body);
+    font-size: 17px; color: var(--text-secondary);
+    line-height: 1.7;
+}
+.card .time {
+    font-size: 15px; color: var(--text-muted);
+    margin-top: 8px;
+}
+
+/* ===========================================
+   STEP LIST (centered)
+   =========================================== */
+.step-list {
+    display: flex; flex-direction: column;
+    gap: 18px; width: 100%;
+    max-width: 1100px;
+}
+.step-row {
+    display: flex; align-items: center;
+    gap: 28px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-light);
+    border-radius: 16px;
+    padding: 28px 36px;
+    box-shadow: var(--shadow-card);
+    transition: all 0.3s ease;
+}
+.step-row:hover {
+    border-color: var(--accent-amber);
+    box-shadow: var(--shadow-hover);
+}
+.step-num {
+    width: 52px; height: 52px;
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-display);
+    font-size: 24px; font-weight: 700;
+    flex-shrink: 0;
+}
+.step-num.amber { background: #fef3e4; color: #b8752e; }
+.step-num.teal { background: #e7f4f2; color: #2d7066; }
+.step-num.rose { background: #fde8ec; color: #a84255; }
+.step-body {
+    text-align: left; flex: 1;
+}
+.step-body h3 {
+    font-family: var(--font-display);
+    font-size: 22px; font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+.step-body p {
+    font-family: var(--font-body);
+    font-size: 17px; color: var(--text-secondary);
+    line-height: 1.6;
+}
+.step-body .hint {
+    display: inline-block;
+    background: #fef8f0;
+    color: #b8752e;
+    padding: 6px 16px;
+    border-radius: 8px;
+    font-size: 15px;
+    margin-top: 8px;
+    border: 1px solid #f0dbb8;
+}
+
+/* ===========================================
+   WARNING BLOCK
+   =========================================== */
+.warn-block {
+    display: flex; align-items: flex-start;
+    gap: 20px;
+    background: #fef8f8;
+    border: 1px solid #f0d4d8;
+    border-left: 4px solid var(--accent-rose);
+    border-radius: 0 12px 12px 0;
+    padding: 28px 32px;
+    text-align: left;
+    max-width: 900px;
+}
+.warn-block .warn-icon {
+    font-size: 32px; flex-shrink: 0;
+}
+.warn-block p {
+    font-family: var(--font-body);
+    font-size: 18px; color: #7a303e;
+    line-height: 1.8;
+}
+
+/* ===========================================
+   COMPARISON TABLE
+   =========================================== */
+.comparison-table {
+    width: 100%; max-width: 1300px;
+    border-collapse: separate;
+    border-spacing: 0;
+    background: var(--bg-card);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: var(--shadow-card);
+}
+.comparison-table th {
+    background: #faf5ed;
+    color: var(--text-primary);
+    font-family: var(--font-display);
+    font-size: 18px; font-weight: 600;
+    padding: 22px 28px;
+    text-align: center;
+    border-bottom: 2px solid var(--accent-amber);
+}
+.comparison-table th:first-child { text-align: left; }
+.comparison-table td {
+    font-family: var(--font-body);
+    font-size: 17px; color: var(--text-secondary);
+    padding: 20px 28px;
+    text-align: center;
+    border-bottom: 1px solid var(--border-light);
+}
+.comparison-table td:first-child {
+    text-align: left; font-weight: 500;
+    color: var(--text-primary);
+}
+.comparison-table tr:last-child td { border-bottom: none; }
+.check { color: var(--accent-teal); font-size: 20px; }
+.cross { color: var(--accent-rose); font-size: 20px; }
+
+/* ===========================================
+   CLOSING SLIDE
+   =========================================== */
+.closing-slide h2 {
+    font-family: var(--font-display);
+    font-size: 56px; font-weight: 700;
+    color: var(--text-primary);
+}
+.closing-slide .closing-text {
+    font-family: var(--font-body);
+    font-size: 22px; color: var(--text-secondary);
+    line-height: 1.8; max-width: 600px;
+    margin-top: 16px;
+}
+.closing-slide .btn-row {
+    display: flex; gap: 28px; margin-top: 36px;
+}
+.closing-slide .btn {
+    font-family: var(--font-body);
+    font-size: 20px; font-weight: 500;
+    color: var(--text-primary);
+    text-decoration: none;
+    padding: 16px 36px;
+    border: 1px solid var(--border-light);
+    border-radius: 14px;
+    background: var(--bg-card);
+    transition: all 0.3s ease;
+    box-shadow: var(--shadow-card);
+}
+.closing-slide .btn:hover {
+    border-color: var(--accent-amber);
+    box-shadow: var(--shadow-hover);
+    transform: translateY(-2px);
+}
+.closing-slide .btn.primary {
+    background: var(--accent-amber);
+    color: #fff; border-color: var(--accent-amber);
+}
+.closing-slide .btn.primary:hover {
+    background: #c48434;
+}
+
+/* ===========================================
+   TWO COLUMN
+   =========================================== */
+.two-col {
+    display: flex; gap: 40px;
+    width: 100%; max-width: 1300px;
+    align-items: stretch;
+}
+
+/* ===========================================
+   ANIMATIONS
+   =========================================== */
+.reveal {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity var(--duration-normal) var(--ease-out-expo),
+                transform var(--duration-normal) var(--ease-out-expo);
+}
+.slide.visible .reveal { opacity: 1; transform: translateY(0); }
+.reveal:nth-child(1) { transition-delay: 0.04s; }
+.reveal:nth-child(2) { transition-delay: 0.10s; }
+.reveal:nth-child(3) { transition-delay: 0.16s; }
+.reveal:nth-child(4) { transition-delay: 0.22s; }
+.reveal:nth-child(5) { transition-delay: 0.28s; }
+.reveal:nth-child(6) { transition-delay: 0.34s; }
+.reveal:nth-child(7) { transition-delay: 0.40s; }
+.reveal:nth-child(8) { transition-delay: 0.46s; }
+.reveal:nth-child(9) { transition-delay: 0.52s; }
+
+.reveal-scale {
+    opacity: 0;
+    transform: scale(0.95);
+    transition: opacity 0.7s var(--ease-out-expo),
+                transform 0.7s var(--ease-out-expo);
+}
+.slide.visible .reveal-scale { opacity: 1; transform: scale(1); }
+
+/* ===========================================
+   NAVIGATION
+   =========================================== */
+.deck-controls {
+    display: flex; gap: 14px; align-items: center;
+    background: var(--bg-card);
+    border: 1px solid var(--border-light);
+    border-radius: 40px;
+    padding: 10px 22px;
+    font-family: var(--font-body);
+    box-shadow: var(--shadow-card);
+}
+.deck-controls button {
+    background: none; border: none;
+    color: var(--text-secondary);
+    font-size: 18px; cursor: pointer;
+    padding: 6px 14px; border-radius: 8px;
+    transition: all 0.2s ease;
+}
+.deck-controls button:hover {
+    color: var(--text-primary);
+    background: #f5f0e8;
+}
+.deck-controls .page-indicator {
+    color: var(--text-muted);
+    font-size: 15px; min-width: 70px;
+    text-align: center;
+}
+
+/* ===========================================
+   EDIT MODE
+   =========================================== */
+.edit-hotzone {
+    position: fixed; top: 0; left: 0;
+    width: 80px; height: 80px;
+    z-index: 10000; cursor: pointer;
+}
+.edit-toggle {
+    position: fixed; top: 16px; left: 16px;
+    width: 42px; height: 42px;
+    border-radius: 12px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-light);
+    color: var(--text-secondary);
+    font-size: 18px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.3s ease;
+    z-index: 10001;
+    box-shadow: var(--shadow-card);
+}
+.edit-toggle.show, .edit-toggle.active {
+    opacity: 1; pointer-events: auto;
+}
+[contenteditable]:focus {
+    outline: 2px solid var(--accent-amber);
+    outline-offset: 4px;
+    border-radius: 4px;
+}
+
+/* ===========================================
+   INLINE TOKEN CODE
+   =========================================== */
+code.token {
+    background: #fef8f0;
+    color: #b8752e;
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 17px;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    border: 1px solid #f0dbb8;
+}
+</style>
+</head>
+<body>
+
+<div class="edit-hotzone"></div>
+<button class="edit-toggle" id="editToggle" title="编辑模式 (E)">✏️</button>
+
+<div class="deck-viewport">
+    <main class="deck-stage" id="deckStage">
+
+        <!-- SLIDE 0: TITLE -->
+        <section class="slide title-slide active">
+            <div class="slide-content">
+                <div class="emoji-hero reveal">🔑</div>
+                <h1 class="reveal">维格表 <span class="hl">API</span><br>权限开通指南</h1>
+                <div class="ornament reveal"></div>
+                <p class="subtitle reveal">一份给表主的小白友好文档</p>
+                <div class="meta-row reveal">
+                    <div class="meta-item">
+                        <span class="icon">📋</span>
+                        <span class="label">3 种方案</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="icon">⏱️</span>
+                        <span class="label">最快 2 分钟</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="icon">🛡️</span>
+                        <span class="label">用完可撤销</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 1: WHY -->
+        <section class="slide">
+            <div class="slide-content" style="gap:28px;">
+                <h2 class="reveal" style="font-family:var(--font-display);font-size:44px;font-weight:700;color:var(--text-primary);">🤔 为什么要开通？</h2>
+                <div class="ornament reveal"></div>
+                <div class="step-list reveal">
+                    <div class="step-row">
+                        <div class="step-num amber">!</div>
+                        <div class="step-body">
+                            <h3>当前的问题</h3>
+                            <p>你的维格表分享链接目前是 <strong>「仅查看」</strong> 模式。成员想通过程序批量新增数据，需要 API 访问权限。</p>
+                        </div>
+                    </div>
+                    <div class="step-row">
+                        <div class="step-num amber">💡</div>
+                        <div class="step-body">
+                            <h3>一句话解释</h3>
+                            <p>API Token 就像一把 <strong>数字钥匙</strong>，有了它，程序就能代替人工在表格里新增、修改数据。</p>
+                            <div class="hint">Token 的权限 = 用户在界面上的操作权限</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 2: THREE OPTIONS -->
+        <section class="slide">
+            <div class="slide-content" style="gap:28px;">
+                <h2 class="reveal" style="font-family:var(--font-display);font-size:44px;font-weight:700;">📋 三种方案，任选其一</h2>
+                <div class="ornament reveal"></div>
+                <div class="card-grid reveal">
+                    <div class="card featured">
+                        <div class="card-icon">⚡</div>
+                        <h3>方案 A</h3>
+                        <span class="tag tag-fast">最快</span>
+                        <p>分享你的 API Token 给成员，程序直接操作表格。</p>
+                        <div class="time">⏱ 耗时 2 分钟</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon">🛡️</div>
+                        <h3>方案 B</h3>
+                        <span class="tag tag-safe">正规做法</span>
+                        <p>把成员加入空间站，他自己生成 Token，权限精准可控。</p>
+                        <div class="time">⏱ 耗时 5 分钟</div>
+                    </div>
+                    <div class="card">
+                        <div class="card-icon">📝</div>
+                        <h3>方案 C</h3>
+                        <span class="tag tag-warn">仅手动</span>
+                        <p>重新分享「可编辑」链接，但只能浏览器手动操作，不支持 API。</p>
+                        <div class="time">⏱ 耗时 1 分钟</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 3: PLAN A STEPS -->
+        <section class="slide">
+            <div class="slide-content" style="gap:20px;">
+                <h2 class="reveal" style="font-family:var(--font-display);font-size:40px;font-weight:700;">⚡ 方案 A：分享你的 API Token</h2>
+                <div class="ornament reveal"></div>
+                <div class="step-list reveal">
+                    <div class="step-row">
+                        <div class="step-num amber">1</div>
+                        <div class="step-body"><h3>登录维格云</h3><p>打开浏览器访问 vika.cn，登录你的账号。</p></div>
+                    </div>
+                    <div class="step-row">
+                        <div class="step-num amber">2</div>
+                        <div class="step-body">
+                            <h3>进入「开发者配置」</h3>
+                            <p>点击左下角个人头像 → 用户中心 → 开发者配置</p>
+                            <div class="hint">👤 头像 → ⚙️ 用户中心 → 🔧 开发者配置</div>
+                        </div>
+                    </div>
+                    <div class="step-row">
+                        <div class="step-num amber">3</div>
+                        <div class="step-body"><h3>生成 API Token</h3><p>点击 "+" 按钮生成新 Token。首次使用需绑定邮箱。</p></div>
+                    </div>
+                    <div class="step-row">
+                        <div class="step-num amber">4</div>
+                        <div class="step-body">
+                            <h3>复制并发送</h3>
+                            <p>Token 格式类似 <code class="token">uskYtInkHozfsMikhh0yfoS</code> — 复制后发给成员即可。</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 4: SECURITY -->
+        <section class="slide">
+            <div class="slide-content" style="gap:28px;">
+                <h2 class="reveal" style="font-family:var(--font-display);font-size:44px;font-weight:700;">🔒 用完后的安全操作</h2>
+                <div class="ornament reveal"></div>
+                <div class="step-list reveal" style="max-width:900px;">
+                    <div class="step-row">
+                        <div class="step-num rose">5</div>
+                        <div class="step-body">
+                            <h3>重置 Token（重要！）</h3>
+                            <p>成员用完 API 后，回到「开发者配置」页面，点击 <strong>「重新生成」</strong>，旧 Token 立即失效。</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="warn-block reveal">
+                    <div class="warn-icon">⚠️</div>
+                    <p><strong>安全提醒：</strong>Token 相当于你的账号密码，只发给你信任的人。用完记得重置！</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 5: PLAN B -->
+        <section class="slide">
+            <div class="slide-content" style="gap:20px;">
+                <h2 class="reveal" style="font-family:var(--font-display);font-size:40px;font-weight:700;">🛡️ 方案 B：邀请成员加入空间站</h2>
+                <div class="ornament reveal"></div>
+                <div class="step-list reveal">
+                    <div class="step-row">
+                        <div class="step-num teal">1</div>
+                        <div class="step-body"><h3>进入空间站设置</h3><p>左侧边栏点击空间站名称旁的 ⚙️ 设置图标。</p></div>
+                    </div>
+                    <div class="step-row">
+                        <div class="step-num teal">2</div>
+                        <div class="step-body"><h3>管理成员</h3><p>进入「成员管理」。如人数已满，可移除不活跃成员或升级套餐。</p></div>
+                    </div>
+                    <div class="step-row">
+                        <div class="step-num teal">3</div>
+                        <div class="step-body"><h3>发送邀请</h3><p>点击「邀请成员」→ 复制链接发给成员。</p></div>
+                    </div>
+                    <div class="step-row">
+                        <div class="step-num teal">4</div>
+                        <div class="step-body"><h3>成员生成 Token</h3><p>成员登录后，按方案 A 步骤 1-4 自己生成 API Token。</p></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 6: COMPARISON -->
+        <section class="slide">
+            <div class="slide-content" style="gap:24px;">
+                <h2 class="reveal" style="font-family:var(--font-display);font-size:44px;font-weight:700;">📊 三种方案对比</h2>
+                <div class="ornament reveal"></div>
+                <div class="reveal-scale" style="width:100%;max-width:1300px;">
+                    <table class="comparison-table" style="width:100%;">
+                        <thead>
+                            <tr>
+                                <th style="width:22%;"></th>
+                                <th style="width:26%;">⚡ 方案 A · 分享 Token</th>
+                                <th style="width:26%;">🛡️ 方案 B · 加入空间站</th>
+                                <th style="width:26%;">📝 方案 C · 可编辑链接</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>支持 API 批量操作</td><td><span class="check">✅</span></td><td><span class="check">✅</span></td><td><span class="cross">❌</span></td></tr>
+                            <tr><td>操作难度</td><td>⭐ 很低</td><td>⭐⭐ 中等</td><td>⭐ 很低</td></tr>
+                            <tr><td>安全性</td><td>⚠️ 权限大</td><td>✅ 精准可控</td><td>✅ 仅限此表</td></tr>
+                            <tr><td>预计耗时</td><td>2 分钟</td><td>5 分钟</td><td>1 分钟</td></tr>
+                            <tr><td>用完可撤销</td><td>✅ 重置 Token</td><td>✅ 移除成员</td><td>✅ 取消分享</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p class="reveal" style="font-family:var(--font-body);font-size:16px;color:var(--text-muted);margin-top:8px;">推荐方案 A 或 B，都支持 API 批量操作</p>
+            </div>
+        </section>
+
+        <!-- SLIDE 7: CLOSING -->
+        <section class="slide closing-slide">
+            <div class="slide-content" style="gap:20px;">
+                <div class="reveal" style="font-size:64px;">✨</div>
+                <h2 class="reveal">准备好了吗？</h2>
+                <div class="ornament reveal"></div>
+                <p class="closing-text reveal">
+                    现在就去 vika.cn 生成一个 Token，<br>然后发给需要的人吧！
+                </p>
+                <div class="btn-row reveal">
+                    <a class="btn primary" href="https://vika.cn" target="_blank">🏠 打开 vika.cn</a>
+                    <a class="btn" href="https://developers.vika.cn/api/quick-start/" target="_blank">📖 API 文档</a>
+                </div>
+                <p class="reveal" style="font-family:var(--font-body);font-size:15px;color:var(--text-muted);margin-top:24px;">
+                    有任何问题？查看官方开发者文档获取更多帮助
+                </p>
+            </div>
+        </section>
+
+    </main>
+</div>
+
+<div class="deck-controls" id="deckControls">
+    <button id="prevBtn" title="上一页">◀</button>
+    <span class="page-indicator" id="pageIndicator">1 / 8</span>
+    <button id="nextBtn" title="下一页">▶</button>
+</div>
+
+<script>
+/* ===========================================
+   SLIDE PRESENTATION CONTROLLER
+   =========================================== */
+class SlidePresentation {
+    constructor() {
+        this.slides = document.querySelectorAll('.slide');
+        this.currentSlide = 0;
+        this.stage = document.getElementById('deckStage');
+        this.setupStageScale();
+        this.setupKeyboardNav();
+        this.setupTouchNav();
+        this.showSlide(0);
+    }
+
+    setupStageScale() {
+        const scale = () => {
+            const factor = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+            const x = (window.innerWidth - 1920 * factor) / 2;
+            const y = (window.innerHeight - 1080 * factor) / 2;
+            this.stage.style.transform = `translate(${x}px, ${y}px) scale(${factor})`;
+        };
+        scale();
+        window.addEventListener('resize', scale);
+    }
+
+    setupKeyboardNav() {
+        document.addEventListener('keydown', (e) => {
+            if (e.target.getAttribute('contenteditable')) return;
+            if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') {
+                e.preventDefault(); this.next();
+            } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+                e.preventDefault(); this.prev();
+            } else if (e.key === 'Home') {
+                e.preventDefault(); this.showSlide(0);
+            } else if (e.key === 'End') {
+                e.preventDefault(); this.showSlide(this.slides.length - 1);
+            }
+        });
+    }
+
+    setupTouchNav() {
+        let sx = 0, sy = 0;
+        this.stage.addEventListener('touchstart', (e) => {
+            sx = e.touches[0].clientX; sy = e.touches[0].clientY;
+        });
+        this.stage.addEventListener('touchend', (e) => {
+            const dx = e.changedTouches[0].clientX - sx;
+            const dy = e.changedTouches[0].clientY - sy;
+            if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50) {
+                dx > 0 ? this.prev() : this.next();
+            }
+        });
+    }
+
+    showSlide(index) {
+        this.currentSlide = Math.max(0, Math.min(index, this.slides.length - 1));
+        this.slides.forEach((s, i) => {
+            s.classList.toggle('active', i === this.currentSlide);
+            s.classList.toggle('visible', i === this.currentSlide);
+        });
+        document.getElementById('pageIndicator').textContent = `${this.currentSlide + 1} / ${this.slides.length}`;
+    }
+
+    next() { this.showSlide(this.currentSlide + 1); }
+    prev() { this.showSlide(this.currentSlide - 1); }
+}
+const deck = new SlidePresentation();
+document.getElementById('prevBtn').addEventListener('click', () => deck.prev());
+document.getElementById('nextBtn').addEventListener('click', () => deck.next());
+
+/* ===========================================
+   EDIT MODE
+   =========================================== */
+class InlineEditor {
+    constructor() {
+        this.isActive = false; this.editables = [];
+        this.setupToggle();
+    }
+    setupToggle() {
+        const hz = document.querySelector('.edit-hotzone');
+        const btn = document.getElementById('editToggle');
+        let t = null;
+        btn.addEventListener('click', () => this.toggle());
+        hz.addEventListener('mouseenter', () => { clearTimeout(t); btn.classList.add('show'); });
+        hz.addEventListener('mouseleave', () => { t = setTimeout(() => { if(!this.isActive) btn.classList.remove('show'); }, 400); });
+        btn.addEventListener('mouseenter', () => clearTimeout(t));
+        btn.addEventListener('mouseleave', () => { t = setTimeout(() => { if(!this.isActive) btn.classList.remove('show'); }, 400); });
+        hz.addEventListener('click', () => this.toggle());
+        document.addEventListener('keydown', (e) => {
+            if ((e.key === 'e' || e.key === 'E') && !e.target.getAttribute('contenteditable') && !e.target.closest('input,textarea,select')) this.toggle();
+            if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); if(this.isActive) this.toggle(); }
+        });
+    }
+    toggle() {
+        this.isActive = !this.isActive;
+        document.getElementById('editToggle').classList.toggle('active', this.isActive);
+        if (this.isActive) {
+            const els = document.querySelectorAll('.slide h1, .slide h2, .slide h3, .slide p, .slide .hint, .slide td');
+            this.editables = [];
+            els.forEach(el => { el.setAttribute('contenteditable', 'true'); this.editables.push(el); });
+        } else {
+            this.editables.forEach(el => el.removeAttribute('contenteditable'));
+            this.editables = [];
+        }
+    }
+}
+new InlineEditor();
+</script>
+</body>
+</html>
